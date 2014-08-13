@@ -47,13 +47,7 @@ Function Export-SPUTermstore
 
         [switch]$IncludeDeprecated
     )
-
-    $allGroups     = $Termstore.Groups
-    if($GroupName)
-    { 
-        $allGroups = @($allGroups | ?{$_.Name -contains $GroupName})
-    }
-
+    
     $w             = New-Object System.Xml.XmlTextWriter($Path, $null)
     $w.Formatting  = 'Indented'
 
@@ -213,6 +207,12 @@ Function Export-SPUTermstore
         {
             $w.WriteEndElement()
         }
+    }
+
+    $allGroups     = $Termstore.Groups
+    if($GroupName)
+    { 
+        $allGroups = @($allGroups | ?{$_.Name -contains $GroupName})
     }
 
     $w.WriteStartDocument()
