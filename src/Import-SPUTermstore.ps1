@@ -1,127 +1,137 @@
-Function Import-SPTermstore
+Function Import-SPUTermstore
 {
     param(
 
         [Parameter( 
-            Mandatory=$true,
-            Position = 0
+            Mandatory = $true,
+            ValueFromPipeline = $true
         )]
-        [Microsoft.SharePoint.PowerShell.SPSitePipeBind]$Site,
+        [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore,
 
         [Parameter(
-            Mandatory = $true,
-            Position = 1
+            Mandatory = $true
         )]
-        [string]$Path,
-
-        [Parameter(
-            Mandatory = $true,
-            Position = 2
-        )]
-        [string]$TermstoreName
+        [string]$Path
     )
 
-    begin
-    {
-        [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop
+    [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop
 
-        $termstore = Get-SPTermstore $Site $TermstoreName
+    Function Import-TaxonomyGroup
+    { 
+        param(
+            [System.Xml.XmlElement]$groupElem
+        )
 
-        Function CreateGroup
+        $group = $TermStore.Groups | ?{ $_.Name -eq $groupElem.Name }
+        if(-not $group)
         { 
-            param(
-                [System.Xml.XmlElement]$groupElem
-            )
-
-            Write-Host $groupElem.Name -ForeGround Cyan
-
-            $group = $termstore.Groups | ?{ $_.Name -eq $groupElem.Name }
-            if(-not $group)
-            { 
-                $group = $termstore.CreateGroup($groupElem.Name)
-            }
-
-            $group.Description = $groupElem.Description
-
-            foreach($termSet in $groupElem.SelectNodes("./TermSets/TermSet"))
-            { 
-                CreateTermSet $group $termSet
-            } 
+            $group = $TermStore.CreateGroup($groupElem.Name)
         }
 
-        Function CreateTermSet
+        $group.Description = $groupElem.Description
+
+        foreach($termSet in $groupElem.SelectNodes("./TermSets/TermSet"))
         { 
-            param(
-                [Microsoft.SharePoint.Taxonomy.Group]$group,
-                [System.Xml.XmlElement]$termSetElem
-            )
-
-            $termstore.WorkingLanguage = [int]($termSetElem.LCID)
-
-            $guid    = [guid]($termSetElem.ID)
-            $termSet = $group.TermSets | ?{ $_.ID -eq $guid } 
-            
-
-            if(-not $termSet)
-            { 
-                $termSet = $group.CreateTermSet($termSetElem.Name, $guid)
-            } 
-
-            $termSet.Name        = $termSetElem.Name
-            $termSet.Description = $termSetElem.Description
-
-
-            foreach($term in $termSetElem.SelectNodes("./Terms/Term"))
-            { 
-                
-            }
-
+            Import-TaxonomyTermSet $group $termSet
         } 
-
-        Function CreateTerm
-        { 
-            param(
-                $container,
-                [System.Xml.XmlElement]$termElem
-            )
-
-            $guid = [guid]($termElem.ID)
-            $term = $container.Terms | ?{ $_.ID -eq $guid } 
-
-            if(-not $term)
-            { 
-                $term = $container.CreateTerm()
-            }
-
-
-        } 
-
-        Function CreateLabel
-        { 
-        }  
-
-
-
     }
 
-    process
-    {
-        foreach($group in $config.SelectNodes("/Groups/Group"))
+    Function Import-TaxonomyTermSet
+    { 
+        param(
+            [Microsoft.SharePoint.Taxonomy.Group]$group,
+            [System.Xml.XmlElement]$termSetElem
+        )
+
+        $guid         = [guid]($termSetElem.ID)
+        $termSet      = $group.TermSets | ?{ $_.ID -eq $guid } 
+
+        $names        = $termSetElem.SelectNodes("./Name")
+        $descriptions = $termSetElem.SelectNodes("./Description")
+        $terms        = $termSetElem.SelectNodes("./Terms/Term")
+        
+        if(-not $termSet)
         { 
-            CreateGroup $group
-        }         
-    }
+            $name = ($names | ?{ $_.LCID -eq $TermStore.DefaultLanguage })."#text"
+            if(-not $name)
+            { 
+                throw "The TermSet name for the LCID $($TermStore.DefaultLanguage) is missing."
+            } 
+            $termSet = $group.CreateTermSet($name, $guid)
+        } 
 
-    end
+        # We set the names for all the available locales
+        foreach($name in $names)
+        { 
+            $TermStore.WorkingLanguage = $name.LCID
+            $termSet.Name = $name."#text"
+        } 
+        $TermStore.WorkingLanguage = $TermStore.DefaultLanguage
+
+        # We set the description for all the available locales
+        foreach($description in $descriptions)
+        { 
+            $TermStore.WorkingLanguage = $description.LCID
+            $termSet.Description = $description."#text"
+        }
+        $TermStore.WorkingLanguage = $TermStore.DefaultLanguage
+
+        # Create all the terms in the current TermSet
+        foreach($term in $terms)
+        { 
+            Import-TaxonomyTerm $termSet $term
+        }
+
+    } 
+
+    Function Import-TaxonomyTerm
+    { 
+        param(
+            $container,
+            [System.Xml.XmlElement]$termElem
+        )
+
+        $guid   = [guid]($termElem.ID)
+        $term   = $container.Terms | ?{ $_.ID -eq $guid } 
+
+        $labels = $termElem.SelectNodes("./Labels/Label")
+        $terms  = $termElem.SelectNodes("./Terms/Term")
+
+        if(-not $term)
+        {
+            $name = ($labels | ?{ $_.LCID -eq $TermStore.DefaultLanguage -and $_.IsDefaultForLanguage })."#text"
+            if(-not $name)
+            { 
+                throw "The Term's default label name for the LCID $($TermStore.DefaultLanguage) is missing."
+            } 
+            $term = $container.CreateTerm($name, $TermStore.WorkingLanguage, $termElem.ID)
+        }
+
+        foreach($label in $labels)
+        {
+            $term.CreateLabel($label."#text", $label.LCID, $label.IsDefaultForLanguage)
+        }
+
+        foreach($term2 in $terms)
+        {
+            Import-TaxonomyTerm $term $term2 
+        }
+    } 
+
+
+    foreach($group in $config.SelectNodes("/Groups/Group"))
+    { 
+        Import-TaxonomyGroup $group
+    }         
+
+    try 
     {
-        try {
-            $termstore.CommitAll()
-        }
-        catch {
-            $termstore.RollbackAll()
-            throw $_
-        }
-
+        $TermStore.CommitAll()
+    }
+    catch 
+    {
+        $TermStore.RollbackAll()
+        throw $_
     }
 
 }
