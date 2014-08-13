@@ -12,4 +12,4 @@ $zip.Items() | %{
     $shell.Namespace($dest).copyhere($_)
 }
 
-Rename-Item "$dest\spu-master" "SPU2"
+Rename-Item "$dest\spu-master" "SPU"
