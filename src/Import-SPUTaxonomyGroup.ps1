@@ -1,5 +1,33 @@
-Function Import-SPUTermstore
+Function Import-SPUTaxonomyGroup
 {
+    <#
+    .SYNOPSIS
+    Import SharePoint Taxonomy Groups from an XML file
+
+    .DESCRIPTION
+    Import specified Taxonomy Groups from an XML File.
+    This cmdlet import the following elements : Groups, TermSets, Terms
+    and labels. 
+
+    .PARAMETER TermStore
+    A Microsoft.SharePoint.Taxonomy.TermStore object of the specified
+    termstore to import all the terms.
+
+    .PARAMETER Path
+    Path to the xml file to import.
+
+    .INPUTS
+    Microsoft.SharePoint.Taxonomy.TermStore
+    string
+
+    .OUTPUTS
+    $null
+
+    .EXAMPLE
+    Get-SPUTermstore -Name "Managed Metadata Service" | Import-SPUTermstore -Path .\test.xml
+
+    #>
+    [CmdletBinding()]
     param(
         [Parameter( 
             Mandatory = $true,
@@ -8,12 +36,28 @@ Function Import-SPUTermstore
         [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore,
 
         [Parameter(
-            Mandatory = $true
+            Mandatory = $true,
+            ParameterSetName = "ByFile"
         )]
-        [string]$Path
+        [string]$Path,
+
+        [Parameter(
+            Mandatory = $true,
+            ParameterSetName = "ByXml"
+        )]
+        [xml]$Xml
     )
 
-    [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop
+    switch($PsCmdlet.ParameterSetName)
+    {
+        "ByFile" {
+            [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop 
+        }
+
+        "ByXml" {
+            [xml]$config = $Xml
+        }
+    }
 
     Function Import-TaxonomyGroup
     { 
@@ -51,6 +95,7 @@ Function Import-SPUTermstore
         
         if(-not $termSet)
         { 
+            $names | %{write-host $_."#text"}
             $name = ($names | ?{ $_.LCID -eq $TermStore.DefaultLanguage })."#text"
             if(-not $name)
             { 
@@ -80,7 +125,6 @@ Function Import-SPUTermstore
         { 
             Import-TaxonomyTerm $termSet $term
         }
-
     } 
 
     Function Import-TaxonomyTerm
@@ -96,24 +140,29 @@ Function Import-SPUTermstore
         $labels = $termElem.SelectNodes("./Labels/Label")
         $terms  = $termElem.SelectNodes("./Terms/Term")
 
+        $defaultLabel = ($labels | ?{ $_.LCID -eq $TermStore.DefaultLanguage -and $_.IsDefaultForLanguage })
+        if(-not $defaultLabel)
+        {
+            throw "The Term's default label for the LCID $($TermStore.DefaultLanguage) is missing."
+        } 
+
         if(-not $term)
         {
-            $name = ($labels | ?{ $_.LCID -eq $TermStore.DefaultLanguage -and $_.IsDefaultForLanguage })."#text"
-            if(-not $name)
-            { 
-                throw "The Term's default label name for the LCID $($TermStore.DefaultLanguage) is missing."
-            } 
-            $term = $container.CreateTerm($name, $TermStore.WorkingLanguage, $termElem.ID)
+            $term = $container.CreateTerm($defaultLabel."#text", $TermStore.WorkingLanguage, $termElem.ID)
         }
 
         foreach($label in $labels)
         {
-            $term.CreateLabel($label."#text", $label.LCID, $label.IsDefaultForLanguage)
+            # Check if the label doesn't exists
+            if(-not ($term.Labels | ?{ ($_.Language -eq $label.LCID) -and ($_.Value -eq $label."#text") }))
+            { 
+                $term.CreateLabel($label."#text", $label.LCID, $label.IsDefaultForLanguage) | Out-Null
+            } 
         }
 
-        foreach($term2 in $terms)
+        foreach($cTerm in $terms)
         {
-            Import-TaxonomyTerm $term $term2 
+            Import-TaxonomyTerm $term $cTerm 
         }
     } 
 

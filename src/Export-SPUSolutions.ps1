@@ -50,8 +50,8 @@ Function Export-SPUSolution
         foreach($pipe in $Identity)
         {
             $s = $pipe.Read()
-            Write-Host "-> $($s.Name)"
-            $s.SolutionFile.SaveAs("$detinationPath\$($s.Name)") 
+            $s.SolutionFile.SaveAs("$detinationPath\$($s.Name)")
+            $s 
         }
     }
 

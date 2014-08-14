@@ -46,21 +46,20 @@ Function Get-SPUTermstore
     [CmdletBinding(DefaultParameterSetName="Default")]
     Param(
         [Parameter(
-            Position = 0, 
             Mandatory=$false, 
             ValueFromPipeline=$true
         )]
         [Microsoft.SharePoint.Taxonomy.TaxonomySession]$Session = $(Get-SPUTaxonomySession),
 
         [Parameter(
-            Position = 1,
-            Mandatory=$false, 
+            Position = 0,
+            Mandatory=$true, 
             ParameterSetName="ByName"
         )]
         [string]$Name,
 
         [Parameter(
-            Position = 1,
+            Position = 0,
             Mandatory=$true, 
             ParameterSetName="ById"
         )]

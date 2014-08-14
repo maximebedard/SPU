@@ -1,4 +1,4 @@
-Function Export-SPUTermstore
+Function Export-SPUTaxonomyGroup
 {
     <#
     .SYNOPSIS
@@ -47,68 +47,50 @@ Function Export-SPUTermstore
 
         [switch]$IncludeDeprecated
     )
-    
+
     $w             = New-Object System.Xml.XmlTextWriter($Path, $null)
     $w.Formatting  = 'Indented'
 
     $Termstore.WorkingLanguage = $Termstore.DefaultLanguage
 
-    Function Export-TaxonomyGroup
+    Function Export-TaxonomyGroups
     {
         param(
-            [Parameter(
-                Mandatory = $true, 
-                ValueFromPipeline = $true
-            )]
             [Microsoft.SharePoint.Taxonomy.Group[]]$Groups
         )
+    
+        # Groups
+        $w.WriteStartElement("Groups")
+    
+        foreach($group in $Groups) 
+        {         
+            Write-Verbose "Group : $($group.Name)"
 
-        begin
-        {
-            # Groups
-            $w.WriteStartElement("Groups")
-        }
-        process
-        {
-            foreach($group in $Groups) {
-             
-                Write-Verbose "Group : $($group.Name)"
+            # Group
+            $w.WriteStartElement("Group")
+            $w.WriteAttributeString("Name", $group.Name)
+            $w.WriteAttributeString("Description", $group.Description)
 
-                # Group
-                $w.WriteStartElement("Group")
-                $w.WriteAttributeString("Name", $group.Name)
-                $w.WriteAttributeString("Description", $group.Description)
+            Export-TaxonomyTermSets -TermSets $group.TermSets 
 
-                $group.TermSets | Export-TaxonomyTermSet 
-
-                # End Group
-                $w.WriteEndElement()
-            
-            }
-        }
-        end
-        {
-            # End Groups
+            # End Group
             $w.WriteEndElement()
         }
+    
+        # End Groups
+        $w.WriteEndElement()
     }
 
-    Function Export-TaxonomyTermSet
+    Function Export-TaxonomyTermSets
     {
         param(
-            [Parameter(
-                Mandatory = $true,
-                ValueFromPipeline = $true
-            )]
-            [Microsoft.SharePoint.Taxonomy.TermSet]$termSet
+            [Microsoft.SharePoint.Taxonomy.TermSet[]]$TermSets
         )
-
-        begin
-        {
-            # TermSets
-            $w.WriteStartElement("TermSets")
-        }
-        process
+    
+        # TermSets
+        $w.WriteStartElement("TermSets")
+    
+        foreach($termSet in $TermSets)
         {
             Write-Verbose "TermSet : $($termSet.Name)"
 
@@ -139,74 +121,67 @@ Function Export-SPUTermstore
             } 
             $Termstore.WorkingLanguage = $Termstore.DefaultLanguage
 
-            $termSet.Terms | Export-TaxonomyTerm
+            Export-TaxonomyTerms -Terms $termSet.Terms
 
             # End TermSet
             $w.WriteEndElement()
         }
 
-        end 
-        { 
-            # End TermSets
-            $w.WriteEndElement()
-        }
+        # End TermSets
+        $w.WriteEndElement()
     }
 
-    Function Export-TaxonomyTerm
+    Function Export-TaxonomyTerms
     {
         param(
-            [Parameter(
-                Mandatory = $true,
-                ValueFromPipeline = $true
-            )]
-            [Microsoft.SharePoint.Taxonomy.Term]$term
+            [Microsoft.SharePoint.Taxonomy.Term[]]$Terms
         )
 
-        begin 
-        {
-            # Terms
-            $w.WriteStartElement("Terms")
-        }
+        # Terms
+        $w.WriteStartElement("Terms")
 
-        process 
+        foreach($term in $Terms)
         {
+            Write-Verbose "Term : $($term.Name)"
+
             # Term
             $w.WriteStartElement("Term")
             $w.WriteAttributeString("ID", $term.Id)
             
-            Write-Verbose "Term : $($term.Name)"
+            Export-TaxonomyLabels -Labels $term.Labels
 
-            $w.WriteStartElement("Labels")
-            foreach($l in $term.Labels)
-            {
-                $w.WriteStartElement("Label")
-                $w.WriteAttributeString("LCID", $label.Language)
-                if($label.IsDefaultForLanguage)
-                {
-                    $w.WriteAttributeString("IsDefaultForLanguage", $label.IsDefaultForLanguage)
-                }
-
-                $w.WriteString($label.Value)
-
-                $w.WriteEndElement()
-            }
-            $w.WriteEndElement()
-
-
-            $w.WriteStartElement("Terms")    
-            foreach($t in $term.Terms)
-            {
-                Export-TaxonomyTerm $t
-            }
-            $w.WriteEndElement()
+            Export-TaxonomyTerms -Term $term.Terms
 
             # End Term
             $w.WriteEndElement()
         }
-        end 
+
+        $w.WriteEndElement()
+    }
+
+    Function Export-TaxonomyLabels
+    {
+        param(
+            [Microsoft.SharePoint.Taxonomy.Label[]]$Labels
+        )
+
+        $w.WriteStartElement("Labels")
+
+        foreach($label in $Labels)
         {
+            $w.WriteStartElement("Label")
+            $w.WriteAttributeString("LCID", $label.Language)
+            if($label.IsDefaultForLanguage)
+            {
+                $w.WriteAttributeString("IsDefaultForLanguage", $label.IsDefaultForLanguage)
+            }
+
+            $w.WriteString($label.Value)
+
             $w.WriteEndElement()
         }
+        
+        $w.WriteEndElement()    
     }
 
     $allGroups     = $Termstore.Groups
@@ -217,7 +192,7 @@ Function Export-SPUTermstore
 
     $w.WriteStartDocument()
     
-    $allGroups | Export-TaxonomyGroup
+    Export-TaxonomyGroups -Groups $allGroups
 
     $w.WriteEndDocument()
 

@@ -19,7 +19,7 @@ $ScriptRoot = (Split-Path $MyInvocation.MyCommand.Path)
 Export-ModuleMember -Function Get-SPUCentralAdministration
 
 # Taxonomy
-Export-ModuleMember -Function Import-SPUTermstore, Export-SPUTermstore, Get-SPUTermstore, Get-SPUTaxonomySession
+Export-ModuleMember -Function Import-SPUTaxonomyGroup, Export-SPUTaxonomyGroup, Get-SPUTermstore, Get-SPUTaxonomySession
 
 # Solutions
 Export-ModuleMember -Function Export-SPUSolution
