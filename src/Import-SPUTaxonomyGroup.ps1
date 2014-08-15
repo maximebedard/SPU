@@ -166,7 +166,6 @@ Function Import-SPUTaxonomyGroup
         }
     } 
 
-
     foreach($group in $config.SelectNodes("/Groups/Group"))
     { 
         Import-TaxonomyGroup $group
