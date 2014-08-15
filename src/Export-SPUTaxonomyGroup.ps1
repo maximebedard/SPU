@@ -34,18 +34,22 @@ Function Export-SPUTaxonomyGroup
     #>
     [CmdletBinding()]
     param(
-        [Parameter( 
-            Position = 0,
-            Mandatory = $false,
-            ValueFromPipeline = $true
+        [Parameter(
+            Mandatory=$true,
+            Position = 0
         )]
-        [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore = (Get-SPUTermstore),
-        
+        [string]$Path,
+
+        [Parameter(
+            Mandatory=$true,
+            Position = 1
+        )]
         [string[]]$GroupName, 
 
-        [string]$Path = "$PWD\$([guid]::NewGuid()).xml",
-
-        [switch]$IncludeDeprecated
+        [Parameter(
+            ValueFromPipeline = $true
+        )]
+        [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore = (Get-SPUTermstore)
     )
 
     $w             = New-Object System.Xml.XmlTextWriter($Path, $null)

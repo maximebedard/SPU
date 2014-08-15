@@ -22,12 +22,15 @@ Function Export-SPUSolution
     param(
 
         [Parameter(
-            Position = 0,
+            Mandatory = $true,
+            Position = 0
+        )]
+        [string]$Path,
+
+        [Parameter(
             ValueFromPipeline = $true
         )]
-        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity = (Get-SPSolution),
-
-        [string]$Path = $PWD
+        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity = (Get-SPSolution)
     )
 
     begin

@@ -95,7 +95,6 @@ Function Import-SPUTaxonomyGroup
         
         if(-not $termSet)
         { 
-            $names | %{write-host $_."#text"}
             $name = ($names | ?{ $_.LCID -eq $TermStore.DefaultLanguage })."#text"
             if(-not $name)
             { 
