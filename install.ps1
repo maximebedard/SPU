@@ -7,7 +7,7 @@ $dest    = "$home\Documents\WindowsPowerShell\Modules"
 
 if(Test-Path "$dest\SPU")
 {
-    Remove-Item "$dest\SPU" -Confirm
+    Remove-Item "$dest\SPU" -Confirm -Recurse -Force
     if(Test-Path "$dest\SPU") { return }
 }
 
