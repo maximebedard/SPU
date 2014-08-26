@@ -1,4 +1,4 @@
-Function Get-SPUTaxonomySession
+function Get-SPUTaxonomySession
 {
     <#
     .SYNOPSIS
@@ -7,7 +7,8 @@ Function Get-SPUTaxonomySession
     .DESCRIPTION
     Returns a Microsoft.SharePoint.Taxonomy.TaxonomySession. If no site 
     collection is passed, the Central Administration site collection
-    is used.
+    is used. This replaces the original Get-SPTaxonomySession since the cache
+    never gets invalidates.
 
     .PARAMETER Site
     Site collection object to use when retreiving the taxonomy session.
@@ -40,8 +41,10 @@ Function Get-SPUTaxonomySession
             Mandatory = $false, 
             ValueFromPipeline = $true
         )]
-        [Microsoft.SharePoint.PowerShell.SPSitePipeBind]$Site = (Get-SPUCentralAdministration).Url
+        [Microsoft.SharePoint.PowerShell.SPSitePipeBind]$Site = (Get-SPUCentralAdministration).Url,
+
+        [switch]$DoNotUpdateCache
     )
 
-    Get-SPTaxonomySession -Site $Site
+    New-Object Microsoft.SharePoint.Taxonomy.TaxonomySession -ArgumentList @($Site.Read(), -not $UpdateCache)
 }

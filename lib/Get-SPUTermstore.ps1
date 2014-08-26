@@ -1,4 +1,4 @@
-Function Get-SPUTermstore
+function Get-SPUTermstore
 {
     <#
     .SYNOPSIS

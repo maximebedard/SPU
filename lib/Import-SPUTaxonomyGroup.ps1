@@ -1,4 +1,4 @@
-Function Import-SPUTaxonomyGroup
+function Import-SPUTaxonomyGroup
 {
     <#
     .SYNOPSIS
@@ -59,7 +59,7 @@ Function Import-SPUTaxonomyGroup
         }
     }
 
-    Function Import-TaxonomyGroup
+    function Import-TaxonomyGroup
     { 
         param(
             [System.Xml.XmlElement]$groupElem
@@ -79,7 +79,7 @@ Function Import-SPUTaxonomyGroup
         } 
     }
 
-    Function Import-TaxonomyTermSet
+    function Import-TaxonomyTermSet
     { 
         param(
             [Microsoft.SharePoint.Taxonomy.Group]$group,
@@ -126,7 +126,7 @@ Function Import-SPUTaxonomyGroup
         }
     } 
 
-    Function Import-TaxonomyTerm
+    function Import-TaxonomyTerm
     { 
         param(
             $container,

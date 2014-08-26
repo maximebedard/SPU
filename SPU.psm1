@@ -9,17 +9,20 @@ if(!(Get-PSSnapin "Microsoft.SharePoint.PowerShell" -ErrorAction SilentlyContinu
 }
 
 $ScriptRoot = (Split-Path $MyInvocation.MyCommand.Path)
-# Import functions
-@("$ScriptRoot\src\*.ps1") | 
+
+# Import cmdlets
+@("$ScriptRoot\lib\*.ps1") | 
     Resolve-Path | 
     ?{ -not ($_.ProviderPath.Contains(".Tests.")) } |
     %{ . $_.ProviderPath }
 
 # Utilities
-Export-ModuleMember -Function Get-SPUCentralAdministration
+Export-ModuleMember -function Get-SPUCentralAdministration
 
 # Taxonomy
-Export-ModuleMember -Function Import-SPUTaxonomyGroup, Export-SPUTaxonomyGroup, Get-SPUTermstore, Get-SPUTaxonomySession
+Export-ModuleMember -function Import-SPUTaxonomyGroup, Export-SPUTaxonomyGroup, Get-SPUTermstore, Get-SPUTaxonomySession
 
 # Solutions
-Export-ModuleMember -Function Export-SPUSolution
+Export-ModuleMember -function Export-SPUSolution
+
+Export-ModuleMember -function Get-AssemblyFullName

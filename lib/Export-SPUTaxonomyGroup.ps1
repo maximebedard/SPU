@@ -1,4 +1,4 @@
-Function Export-SPUTaxonomyGroup
+function Export-SPUTaxonomyGroup
 {
     <#
     .SYNOPSIS
@@ -51,13 +51,13 @@ Function Export-SPUTaxonomyGroup
         )]
         [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore = (Get-SPUTermstore)
     )
-
+    
     $w             = New-Object System.Xml.XmlTextWriter($Path, $null)
     $w.Formatting  = 'Indented'
 
     $Termstore.WorkingLanguage = $Termstore.DefaultLanguage
 
-    Function Export-TaxonomyGroups
+    function Export-TaxonomyGroups
     {
         param(
             [Microsoft.SharePoint.Taxonomy.Group[]]$Groups
@@ -85,7 +85,7 @@ Function Export-SPUTaxonomyGroup
         $w.WriteEndElement()
     }
 
-    Function Export-TaxonomyTermSets
+    function Export-TaxonomyTermSets
     {
         param(
             [Microsoft.SharePoint.Taxonomy.TermSet[]]$TermSets
@@ -135,7 +135,7 @@ Function Export-SPUTaxonomyGroup
         $w.WriteEndElement()
     }
 
-    Function Export-TaxonomyTerms
+    function Export-TaxonomyTerms
     {
         param(
             [Microsoft.SharePoint.Taxonomy.Term[]]$Terms
@@ -163,7 +163,7 @@ Function Export-SPUTaxonomyGroup
         $w.WriteEndElement()
     }
 
-    Function Export-TaxonomyLabels
+    function Export-TaxonomyLabels
     {
         param(
             [Microsoft.SharePoint.Taxonomy.Label[]]$Labels

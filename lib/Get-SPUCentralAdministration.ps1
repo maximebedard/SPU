@@ -1,4 +1,4 @@
-Function Get-SPUCentralAdministration
+function Get-SPUCentralAdministration
 {
     <#
     .SYNOPSIS

@@ -1,4 +1,4 @@
-Function Export-SPUSolution
+function Export-SPUSolution
 {
     <#
         .SYNOPSIS
@@ -30,37 +30,42 @@ Function Export-SPUSolution
         [Parameter(
             ValueFromPipeline = $true
         )]
-        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity = (Get-SPSolution)
+        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity = (Get-SPSolution),
+
+        [switch]$GenerateConfig,
+        [switch]$PassThru
     )
 
     begin
     {
-        # We create the destination directory
-        if(!(Test-Path -Path $Path) -and 
-            (Test-Path -Path $Path -PathType Container -IsValid))
+        
+        if(!(Test-Path -Path $Path -PathType Container -IsValid))
         {
-            New-Item -Path $Path -ItemType Directory -ErrorAction "Stop"
-        }
-        else {
             throw "The path is invalid"
         }
 
+        if(!(Test-Path -Path $Path))
+        {
+            New-Item -Path $Path -ItemType Directory -ErrorAction "Stop" | Out-Null
+        } 
+        
+
         $detinationPath = Resolve-Path $Path
+
+        $solutions = @()
     }
 
-    process
-    {   
-        foreach($pipe in $Identity)
-        {
-            $s = $pipe.Read()
-            $s.SolutionFile.SaveAs("$detinationPath\$($s.Name)")
-            $s 
-        }
-    }
+    process { $solutions += $Identity }
 
     end 
     { 
-        
+        foreach($solutionPipe in $solutions)
+        {
+            $s = $solutionPipe.Read()
+            $s.SolutionFile.SaveAs("$detinationPath\$($s.Name)")
+        }
+
+        if($PassThru){ Get-ChildItem $detinationPath }
     }
 
 }
