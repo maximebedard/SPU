@@ -10,6 +10,9 @@ if(!(Get-PSSnapin "Microsoft.SharePoint.PowerShell" -ErrorAction SilentlyContinu
 
 $ScriptRoot = (Split-Path $MyInvocation.MyCommand.Path)
 
+# Custom filters
+filter Skip-Null { $_ | ?{ $_ } }
+
 # Import cmdlets
 @("$ScriptRoot\lib\*.ps1") | 
     Resolve-Path | 

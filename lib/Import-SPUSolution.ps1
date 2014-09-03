@@ -7,6 +7,9 @@ function Import-SPUSolution
         [scriptblock[]]$BeforeCallback = @(),
         [scriptblock[]]$AfterCallback = @(),
 
+        [scriptblock[]]$BeforeActionCallback = @(),
+        [scriptblock[]]$AfterActionCallback = @(),
+
         [hashtable]$Parameters = @{
             env="dev"
         },
@@ -14,11 +17,15 @@ function Import-SPUSolution
     )
 
     # Prepend default callbacks
-    $DefaultBeforeCallbacks = @()
-    $DefaultAfterCallbacks = @()
+    $DefaultBeforeCallbacks       = @(${function:Restart-SPUAdministrationService})
+    $DefaultAfterCallbacks        = @(${function:Restart-SPUTimerService})
+    $DefaultBeforeActionCallbacks = @()
+    $DefaultAfterActionCallbacks  = @(${function:Restart-SPUApplicationPools})
 
-    $BeforeCallback = $DefaultBeforeCallbacks + $BeforeCallback
-    $AfterCallback = $DefaultAfterCallbacks + $AfterCallback
+    $BeforeCallback       = $DefaultBeforeCallbacks + $BeforeCallback
+    $AfterCallback        = $DefaultAfterCallbacks + $AfterCallback
+    $BeforeActionCallback = $DefaultBeforeActionCallbacks + $BeforeActionCallback
+    $AfterActionCallback  = $DefaultAfterActionCallbacks + $AfterActionCallback
 
 
     if(Test-Path -Path $Path -Filter "*.xml" -PathType Leaf)
@@ -31,6 +38,8 @@ function Import-SPUSolution
         if ($PSVersionTable.PSVersion.Major -lt 3) { $content = $content -replace '"', '`"' }
 
         $config = [xml]$ExecutionContext.InvokeCommand.ExpandString($content)
+
+        $BeforeCallback | %{ & $_ }
 
         foreach($solutionElem in $config.SelectNodes("/Solutions/Solution"))
         {
@@ -46,7 +55,8 @@ function Import-SPUSolution
             while(@("Installed", "Uninstalled") -notcontains $state)
             {
                 Write-Host " => $state" -Foreground DarkCyan
-                $BeforeCallback | %{ & $_ $name $state}
+                $BeforeActionCallback | %{ & $_ $name $state}
+                
                 switch($state)
                 {
                     "Add" 
@@ -105,12 +115,16 @@ function Import-SPUSolution
                         Remove-SPSolution -Identity $name -Confirm:$false
                     }
                 }
+                
+                $AfterActionCallback | %{ & $_ $name $state}
+
                 $state = Get-SPUSolutionState -Identity $name -WebApplication $webApps -PreviousState $state -Cleanup:$Cleanup
-                $AfterCallback | %{ & $_ $name $state}
             }
 
             Write-Host " => $state!" -Foreground Green
         }
+
+        $AfterCallback | %{ & $_ }
 
     }
     elseif(Test-Path -Path $Path -PathType Container) 
@@ -373,36 +387,54 @@ function Test-SPUSolutionAdded
     }
 }
 
-function Restart-SPUServicesCallback
+function Restart-SPUAdministrationService
 {
+    [CmdletBinding()]
     param(
-        $Identity,
-        $State
+        [string]$Identity,
+        [string]$State
     )
 
-    Write-Verbose "Restarting OWSTimer service"
-    Restart-SPService "sptimerv4","sptimerv5" -ErrorAction "SilentlyContinue"
+    Write-Host "   => Restarting Administration service" -Foreground Magenta
+    Get-Service "SPAdmin*" | Restart-Service
+}
+
+function Restart-SPUTimerService
+{
+    [CmdletBinding()]
+    param(
+        [string]$Identity,
+        [string]$State
+    )
+
+    Write-Host "   => Restarting OWSTimer service" -Foreground Magenta
+    Get-Service "SPTimer*" | Restart-Service
 }
 
 
-function Recycle-SPUApplicationPools
+function Restart-SPUApplicationPools
 {
+    [CmdletBinding()]
     param(
-        $Identity,
-        $State
+        [string]$Identity,
+        [string]$State
     )
 
-
-    if($State -ne "Installed")
+    if(@("Deploy") -notcontains $State)
     {
         return
     }
 
-    $s = Get-SPSolution -Identity $Identity
+    $appPools = Get-SPSolution -Identity $Identity | 
+        %{$_.DeployedWebApplications} | Skip-Null |
+        %{$_.ApplicationPool.Name} | 
+        Select-Object -Unique
 
-    $appPools = $s.DeployedWebApplications | Select -ExpandProperty @{Name="Name"; Expression={$_.ApplicationPool.Name}} -Unique
-
-    $appPools | %{
-        Restart-WebAppPool $_
+    $appPools | Skip-Null | %{ 
+        Write-Host "   => Restarting $_" -Foreground Magenta
+        Restart-WebAppPool -Name $_ 
     }
 }
+
+
+
