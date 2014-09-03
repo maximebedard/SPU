@@ -1,5 +1,63 @@
 function Import-SPUSolution
 {
+    <#
+
+        .SYNOPSIS
+        Import all the solution within a specific manifest into SharePoint.
+
+        .DESCRIPTION
+        Import all the solution, deploys or update existing solutions according to a 
+        solution manifest. The manifest has the following structure : 
+
+        c:\my_app\TestA.wsp
+        c:\my_app\TestB.wsp
+        c:\my_app\manifest.xml
+
+        <?xml version="1.0"?>
+        <Solutions>
+          <Solution Name="TestA.wsp" />
+          <Solution Name="TestB.wsp" >
+            <WebApplications>
+              <WebApplication Url="http://my_webbapp" />
+            </WebApplications>
+          </Solution>
+        </Solutions>
+
+        .PARAMETER Path
+        Path to the folder containing the manifest or the manifest itself
+
+        .PARAMETER BeforeCallback
+        Callbacks called before any operation is executed. Usually environnement preparation
+        or presesquisites. This callback takes no parameters.
+
+        .PARAMETER AfterCallback
+        Callbacks called after all operation is executed. This callback takes no parameters.
+
+        .PARAMETER BeforeActionCallback
+        Callbacks called each time before an operation is executed for a specific solution. 
+        This callback takes 2 parameters : $Identity and $State. 
+
+        .PARAMETER Parameters
+        Callbacks called each time after an operation is executed for a specific solution. 
+        This callback takes 2 parameters : $Identity and $State.
+
+        .PARAMETER Cleanup
+        Switch to specified if the solution contained in the manifest must be remove from SharePoint.
+
+        .EXAMPLE 
+        To import all the solution contained within the manifest.xml
+        PS > Import-SPUSolution -Path c:\my_app
+        or
+        PS > Import-SPUSolution -Path c:\my_app\manifest.xml
+
+        .EXAMPLE
+        To remove all the solutions according to a manifest
+        PS > Import-SPUSolution -Path c:\my_app -Cleanup
+
+        .EXAMPLE
+        To add a step into the deployment process. The following reset IIS after every solution deployed.
+        PS > Import-SPUSolution -Path c:\my_app -BeforeActionCallback { param($Identity, $State) if($state -eq "Deploy") {IISReset} }
+    #>
     [CmdletBinding()]
     param(
         [string]$Path = "$PWD\manifest.xml",
