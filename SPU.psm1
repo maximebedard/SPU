@@ -19,13 +19,26 @@ filter Skip-Null { $_ | ?{ $_ } }
     ?{ -not ($_.ProviderPath.Contains(".Tests.")) } |
     %{ . $_.ProviderPath }
 
-# Utilities
+# Sharepoint Utilities
 Export-ModuleMember -function Get-SPUCentralAdministration
 
 # Taxonomy
-Export-ModuleMember -function Import-SPUTaxonomyGroup, Export-SPUTaxonomyGroup, Get-SPUTermstore, Get-SPUTaxonomySession
+Export-ModuleMember -function Import-SPUTaxonomyGroup, 
+    Export-SPUTaxonomyGroup, 
+    Get-SPUTermstore, 
+    Get-SPUTaxonomySession
 
 # Solutions
-Export-ModuleMember -function Export-SPUSolution, New-SPUSolutionManifest, Import-SPUSolution, Test-SPUSolutionDeployed, Test-SPUSolutionAdded, Test-SPUSolutionNeedUpdate, Test-SPUSolutionNeedReinstall
+Export-ModuleMember -function Export-SPUSolution, 
+    New-SPUSolutionManifest, 
+    Import-SPUSolution, 
+    Test-SPUSolutionDeployed, 
+    Test-SPUSolutionAdded, 
+    Test-SPUSolutionNeedUpdate, 
+    Test-SPUSolutionNeedReinstall,
+    Compare-SPUSolutionFile
 
-Export-ModuleMember -function Get-AssemblyFullName, Write-Spinner
+# General Utilities
+Export-ModuleMember -function Get-AssemblyFullName, 
+    Write-Spinner, 
+    Compare-Directory

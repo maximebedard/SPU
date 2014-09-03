@@ -46,17 +46,17 @@ function Import-SPUSolution
 
         .EXAMPLE 
         To import all the solution contained within the manifest.xml
-        PS > Import-SPUSolution -Path c:\my_app
+        PS C:\> Import-SPUSolution -Path c:\my_app
         or
-        PS > Import-SPUSolution -Path c:\my_app\manifest.xml
+        PS C:\> Import-SPUSolution -Path c:\my_app\manifest.xml
 
         .EXAMPLE
         To remove all the solutions according to a manifest
-        PS > Import-SPUSolution -Path c:\my_app -Cleanup
+        PS C:\> Import-SPUSolution -Path c:\my_app -Cleanup
 
         .EXAMPLE
         To add a step into the deployment process. The following reset IIS after every solution deployed.
-        PS > Import-SPUSolution -Path c:\my_app -BeforeActionCallback { param($Identity, $State) if($state -eq "Deploy") {IISReset} }
+        PS C:\> Import-SPUSolution -Path c:\my_app -BeforeActionCallback { param($Identity, $State) if($state -eq "Deploy") {IISReset} }
     #>
     [CmdletBinding()]
     param(
@@ -288,16 +288,44 @@ function Get-SPUSolutionState
                 {
                     return "Add"
                 }
-            
-                #if(Test-SPUSolutionNeedUpdate -Identity $Identity)
-                #{
-                #    return "Update"
-                #}
-                
-                #if(Test-SPUSolutionNeedReinstall -Identity $Identity)
-                #{
-                #    return "Retract"
-                #}
+
+                # We check if the solution is not newly added
+                if($PreviousState -ne "Add")
+                {
+                    $s = $Identity.Read()
+
+                    $reff_wsp = "$($env:Temp)\$($s.Name)"
+                    $diff_wsp = "$PWD\$($s.Name)"
+
+                    # Save the currently used solution file in temp folder
+                    $s.SolutionFile.SaveAs("$reff_wsp")
+
+                    # Compare both solution files
+                    $compare = Compare-SPUSolutionFile $reff_wsp $diff_wsp
+
+                    # diff contains feature.xml or manifest.xml = reinstall 
+                    if($compare | ?{ ($_.Item -like "feature.xml") -or ($_.Item -like "manifest.xml") }) 
+                    {
+                        return "Retract"
+                    }
+
+                    # diff contains other stuff than dll = update it!
+                    #if()
+                    #{
+                    #    return "Update"
+                    #}
+
+                    # diff contains only dll = check dates
+                    # Update if modified date of fs > deployed
+                    #if()
+                    #{
+                    #    return "Update"
+                    #}
+
+                    # diff contains only dll, check if the deployed one modified date > to deploy
+
+                    # do nothing, the solution is most likely the most recent one. may deploy it to another webapp?
+                }
 
                 if(-not (Test-SPUSolutionDeployed -Identity $Identity -WebApplication $WebApplication))
                 {
@@ -307,47 +335,6 @@ function Get-SPUSolutionState
                 return "Installed"
             }
         
-        }
-    }
-}
-
-function Test-SPUSolutionNeedUpdate 
-{
-    <#
-    TODO
-    #>
-    param(
-        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity
-    )
-
-    process
-    {
-        $Identity | %{
-
-            if(-not (Test-SPUSolutionAdded -Identity $_))
-            {
-                return $false
-            }
-        
-            $s = $_.Read()
-
-            # Download the stored solution into a temporary folder
-            $s.SolutionFile.SaveAs("$($env:Temp)\$($s.Name)")
-            
-            # original = solution store
-            # new      = solution dir
-
-            $tpath_orig = "$($env:Temp)\$([Guid]::NewGuid())"
-            $tpath_new  = "$($env:Temp)\$([Guid]::NewGuid())"
-
-            New-Item -Path $tpath_orig -ItemType Directory | Out-Null
-            New-Item -Path $tpath_new -ItemType Directory | Out-Null
-
-            Expand "$($env:Temp)\$($s.Name)" /f:* $tpath_orig | Out-Null
-            Expand "$PWD\$($s.Name)" /f:* $tpath_new | Out-Null
-
-            Compare-Object -ReferenceObject (Get-ChildItem "$($env:Temp)\$id_orig" -Recurse) -DifferenceObject (Get-ChildItem "$($env:Temp)\$id_new" -Recurse)
-
         }
     }
 }
