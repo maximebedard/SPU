@@ -34,11 +34,7 @@ function Export-SPUTaxonomyGroup
     #>
     [CmdletBinding()]
     param(
-        [Parameter(
-            Mandatory=$true,
-            Position = 0
-        )]
-        [string]$Path,
+        [string]$LiteralPath = "$PWD\$([Guid]::NewGuid()).xml",
 
         [Parameter(
             Mandatory=$true,

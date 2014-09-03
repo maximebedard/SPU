@@ -23,6 +23,6 @@ Export-ModuleMember -function Get-SPUCentralAdministration
 Export-ModuleMember -function Import-SPUTaxonomyGroup, Export-SPUTaxonomyGroup, Get-SPUTermstore, Get-SPUTaxonomySession
 
 # Solutions
-Export-ModuleMember -function Export-SPUSolution
+Export-ModuleMember -function Export-SPUSolution, New-SPUSolutionManifest, Import-SPUSolution, Test-SPUSolutionDeployed, Test-SPUSolutionAdded, Test-SPUSolutionNeedUpdate, Test-SPUSolutionNeedReinstall
 
-Export-ModuleMember -function Get-AssemblyFullName
+Export-ModuleMember -function Get-AssemblyFullName, Write-Spinner

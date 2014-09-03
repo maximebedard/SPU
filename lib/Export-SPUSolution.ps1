@@ -32,13 +32,12 @@ function Export-SPUSolution
         )]
         [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity = (Get-SPSolution),
 
-        [switch]$GenerateConfig,
+        [switch]$GenerateManifest,
         [switch]$PassThru
     )
 
     begin
     {
-        
         if(!(Test-Path -Path $Path -PathType Container -IsValid))
         {
             throw "The path is invalid"
@@ -46,26 +45,46 @@ function Export-SPUSolution
 
         if(!(Test-Path -Path $Path))
         {
+            Write-Verbose "Creating directory $Path"
             New-Item -Path $Path -ItemType Directory -ErrorAction "Stop" | Out-Null
         } 
-        
 
         $detinationPath = Resolve-Path $Path
 
         $solutions = @()
     }
 
-    process { $solutions += $Identity }
+    process 
+    { 
+        $solutions += $Identity 
+    }
 
     end 
     { 
         foreach($solutionPipe in $solutions)
         {
             $s = $solutionPipe.Read()
-            $s.SolutionFile.SaveAs("$detinationPath\$($s.Name)")
+            $sDestPath = "$detinationPath\$($s.Name)"
+            $s.SolutionFile.SaveAs("$sDestPath")
+
+            Write-Verbose "Exported solution to $sDestPath"
         }
 
-        if($PassThru){ Get-ChildItem $detinationPath }
+        if($GenerateManifest) 
+        {
+            Write-Verbose "Generating solution manifest"
+            $solutions | New-SPUSolutionManifest -LiteralPath "$detinationPath\manifest.xml"
+        }
+        
+        if($PassThru)
+        { 
+            Write-Verbose "Passing solution files" 
+            Get-ChildItem $detinationPath -Filter "*.wsp" 
+        }
+
     }
 
 }
+
+
+

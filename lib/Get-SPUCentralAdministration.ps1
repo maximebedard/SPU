@@ -19,8 +19,6 @@ function Get-SPUCentralAdministration
     $ca = Get-SPCentralAdministration
     
     #>
-    [CmdletBinding()]
-    param()
     Get-SPWebApplication -IncludeCentralAdministration | 
         ?{$_.IsAdministrationWebApplication} |
         Select -First 1	
