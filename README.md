@@ -210,4 +210,35 @@ The following xml is generated in .\solutions\manifest.xml :
 
 ## Importation
 
-todo
+Let's assume the following directory structure :
+
+- .\solutions\testa.wsp
+- .\solutions\testb.wsp
+- .\solutions\testc.wsp
+- .\solutions\manifest.xml
+
+.\solutions\manifest.xml
+
+```Xml
+<Solutions>
+  <Solution Name="testa.wsp" />
+  <Solution Name="testb.wsp" />
+  <Solution Name="testc.wsp">
+    <WebApplications>
+      <WebApplication Url="http://webapp_url/" />
+    </WebApplications>
+  </Solution>
+</Solutions>
+```
+
+To import this package : 
+```PowerShell
+cd .\solutions
+Import-SPUSolution
+```
+
+To remove this package : 
+```Powershell
+cd .\solutions
+Import-SPUSolution -Cleanup
+```
