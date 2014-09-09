@@ -261,14 +261,14 @@ Notice the embeded powershell variable `$($Parameters.env)` in the manifest. Thi
 
 ```PowerShell
 # For developpement environment
-Import-SPUSolutions -Parameters @{"env" = "dev."}
+Import-SPUSolution -Parameters @{"env" = "dev."}
 
 # For integration environment
-Import-SPUSolutions -Parameters @{"env" = "int."}
+Import-SPUSolution -Parameters @{"env" = "int."}
 
 # For qa environment
-Import-SPUSolutions -Parameters @{"env" = "qa."}
+Import-SPUSolution -Parameters @{"env" = "qa."}
 
 # For production environment
-Import-SPUSolutions
+Import-SPUSolution
 ```
