@@ -1,3 +1,14 @@
+# SPU
+
+- [Installation](#user-content-installation)
+- [Usage](#user-content-usage)
+- [Termstore](#user-content-termstore)
+  - [Exportation](#user-content-exportation)
+  - [Importation](#user-content-importation)
+- [Solutions](#user-content-solutions)
+  - [Exportation](#user-content-exportation-1)
+  - [Importation](#user-content-importation-1)
+
 # Installation
 
 Automatic installation (requires an internet connection)
