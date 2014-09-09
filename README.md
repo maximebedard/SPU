@@ -35,12 +35,12 @@ The following structure will be used as an example :
 
 ```PowerShell
 # Exporting GroupTest Taxonomy Group
-Get-SPUTermstore "Managed Metadata Service2" 
-	| Export-SPUTaxonomyGroup -LiteralPath C:\out.xml -GroupName "GroupTest"
+Get-SPUTermstore "Managed Metadata Service2" | 
+  Export-SPUTaxonomyGroup -LiteralPath C:\out.xml -GroupName "GroupTest"
 
 # If the taxonomy group was in the default termstore, the following can be used
-Get-SPUTermstore 
-	| Export-SPUTaxonomyGroup -LiteralPath C:\out.xml -GroupName "GroupTest"
+Get-SPUTermstore | 
+  Export-SPUTaxonomyGroup -LiteralPath C:\out.xml -GroupName "GroupTest"
 
 # For more info
 Get-Help Export-SPUTaxonomyGroup
@@ -166,3 +166,37 @@ Get-SPUTermstore -Name "Managed Metadata Service2" |
 Get-SPUTermstore | 
 	Import-SPUTermstore -Path c:\out.xml
 ```
+
+# Solutions
+
+## Exportation
+
+Export all the solutions files in the folder 'solutions' :
+
+```PowerShell
+Export-SPUSolutions -Path ".\solutions"
+```
+
+Export all the solutions and generate a manifest used when importing the solutions : 
+
+```PowerShell
+Export-SPUSolutions -Path ".\solutions" -GenerateManifest
+```
+
+The following xml is generated in .\solutions\manifest.xml : 
+
+```Xml
+<Solutions>
+  <Solution Name="testa.wsp" />
+  <Solution Name="testb.wsp" />
+  <Solution Name="testc.wsp">
+    <WebApplications>
+      <WebApplication Url="http://webapp_url/" />
+    </WebApplications>
+  </Solution>
+</Solutions>
+```
+
+## Importation
+
+todo
