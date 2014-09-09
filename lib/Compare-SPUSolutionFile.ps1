@@ -30,19 +30,23 @@ function Compare-SPUSolutionFile
             Mandatory = $true,
             Position = 0
         )]
+        [ValidatePattern('^.*\.(wsp|WSP)$')]
         [string]$ReferenceSolutionPath,
-        
+
         [Parameter(
             Mandatory = $true,
             Position = 1
         )]
+        [ValidatePattern('^.*\.(wsp|WSP)$')]
         [string]$DifferenceSolutionPath
     )
     
     begin
     {
-        $tpath_reff = "$($env:Temp)\$([Guid]::NewGuid())"
-        $tpath_diff = "$($env:Temp)\$([Guid]::NewGuid())"
+        # We use c:\TEMP instead of $env:Temp because 
+        # most of the time file paths are more than 255 chars
+        $tpath_reff = "C:\TEMP\$([Guid]::NewGuid())"
+        $tpath_diff = "C:\TEMP\$([Guid]::NewGuid())"
 
         New-Item -Path $tpath_reff -ItemType Directory | Out-Null
         New-Item -Path $tpath_diff -ItemType Directory | Out-Null
@@ -53,13 +57,13 @@ function Compare-SPUSolutionFile
 
     process
     {
-        Compare-Directory -ReferenceDirectory $tpath_reff -DifferenceDirectory -Recurse
+        Compare-Directory -ReferenceDirectory $tpath_reff -DifferenceDirectory $tpath_diff -Recurse
     }
 
     end 
     {
-        Remove-Item $tpath_reff -Recurse
-        Remove-Item $tpath_diff -Recurse
+        Remove-Item $tpath_reff -Recurse -Force
+        Remove-Item $tpath_diff -Recurse -Force
     }
 
 }

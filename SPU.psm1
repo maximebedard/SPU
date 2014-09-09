@@ -33,9 +33,7 @@ Export-ModuleMember -function Export-SPUSolution,
     New-SPUSolutionManifest, 
     Import-SPUSolution, 
     Test-SPUSolutionDeployed, 
-    Test-SPUSolutionAdded, 
-    Test-SPUSolutionNeedUpdate, 
-    Test-SPUSolutionNeedReinstall,
+    Test-SPUSolutionAdded,
     Compare-SPUSolutionFile
 
 # General Utilities

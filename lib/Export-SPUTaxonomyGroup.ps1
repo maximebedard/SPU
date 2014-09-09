@@ -13,8 +13,8 @@ function Export-SPUTaxonomyGroup
     An array of taxonomy groups to export. If $null, all the groups
     are exported.
 
-    .PARAMETER Path
-    Path to the xml file to export. If $null, a file with a guid as name
+    .PARAMETER LiteralPath
+    LiteralPath to the xml file to export. If $null, a file with a guid as name
     is created instead.
 
     .PARAMETER IncludeDeprecated
@@ -48,7 +48,7 @@ function Export-SPUTaxonomyGroup
         [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore = (Get-SPUTermstore)
     )
     
-    $w             = New-Object System.Xml.XmlTextWriter($Path, $null)
+    $w             = New-Object System.Xml.XmlTextWriter($LiteralPath, $null)
     $w.Formatting  = 'Indented'
 
     $Termstore.WorkingLanguage = $Termstore.DefaultLanguage

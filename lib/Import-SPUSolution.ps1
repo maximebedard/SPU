@@ -289,10 +289,10 @@ function Get-SPUSolutionState
                     return "Add"
                 }
 
-                # We check if the solution is not newly added
-                if($PreviousState -ne "Add")
+                # We check if the solution is just added or just deployed
+                if(@("Add", "Deploy") -notcontains $PreviousState)
                 {
-                    $s = $Identity.Read()
+                    $s = $_.Read()
 
                     $reff_wsp = "$($env:Temp)\$($s.Name)"
                     $diff_wsp = "$PWD\$($s.Name)"
@@ -301,7 +301,7 @@ function Get-SPUSolutionState
                     $s.SolutionFile.SaveAs("$reff_wsp")
 
                     # Compare both solution files
-                    $compare = Compare-SPUSolutionFile $reff_wsp $diff_wsp
+                    $compare = @(Compare-SPUSolutionFile $reff_wsp $diff_wsp)
 
                     # diff contains feature.xml or manifest.xml = reinstall 
                     if($compare | ?{ ($_.Item -like "feature.xml") -or ($_.Item -like "manifest.xml") }) 
@@ -309,22 +309,12 @@ function Get-SPUSolutionState
                         return "Retract"
                     }
 
-                    # diff contains other stuff than dll = update it!
-                    #if()
-                    #{
-                    #    return "Update"
-                    #}
-
-                    # diff contains only dll = check dates
-                    # Update if modified date of fs > deployed
-                    #if()
-                    #{
-                    #    return "Update"
-                    #}
-
-                    # diff contains only dll, check if the deployed one modified date > to deploy
-
-                    # do nothing, the solution is most likely the most recent one. may deploy it to another webapp?
+                    # diff contains other items = update
+                    if($compare.Count -gt 0)
+                    {
+                        return "Update"
+                    }
+                    
                 }
 
                 if(-not (Test-SPUSolutionDeployed -Identity $Identity -WebApplication $WebApplication))
@@ -337,18 +327,6 @@ function Get-SPUSolutionState
         
         }
     }
-}
-
-function Test-SPUSolutionNeedReinstall
-{
-    <#
-    TODO
-    #>
-    param(
-        [Microsoft.SharePoint.PowerShell.SPSolutionPipeBind[]]$Identity
-    )
-
-    return $false
 }
 
 function Test-SPUSolutionDeployed
