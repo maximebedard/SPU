@@ -242,3 +242,33 @@ To remove this package :
 cd .\solutions
 Import-SPUSolution -Cleanup
 ```
+
+Here is a more practical example : 
+
+.\solutions\manifest.xml
+```Xml
+<Solutions>
+  <Solution Name="testa.wsp" />
+  <Solution Name="testb.wsp" />
+  <Solution Name="testc.wsp">
+    <WebApplications>
+      <WebApplication Url="http://$($Parameters.env)mywebapp.com" />
+    </WebApplications>
+  </Solution>
+</Solutions>
+```
+Notice the embeded powershell variable `$($Parameters.env)` in the manifest. This variable will be expanded at runtime.
+
+```PowerShell
+# For developpement environment
+Import-SPUSolutions -Parameters @{"env" = "dev."}
+
+# For integration environment
+Import-SPUSolutions -Parameters @{"env" = "int."}
+
+# For qa environment
+Import-SPUSolutions -Parameters @{"env" = "qa."}
+
+# For production environment
+Import-SPUSolutions
+```
