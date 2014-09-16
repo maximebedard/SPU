@@ -17,19 +17,9 @@ function Export-SPUTaxonomyGroup
     LiteralPath to the xml file to export. If $null, a file with a guid as name
     is created instead.
 
-    .PARAMETER IncludeDeprecated
-    Boolean to include all deprecated terms or not.
-
-    .INPUTS
-    Microsoft.SharePoint.Taxonomy.TermStore
-    string[]
-    string
-    switch
-
-    .OUTPUTS
-    $null
-
     .EXAMPLE
+    Export the taxonomy group "GroupTest" contained in the "Managed Metadata Service2"
+    Get-SPUTermstore "" | Export-SPUTaxonomyGroup -LiteralPath C:\out.xml -GroupName "GroupTest"
 
     #>
     [CmdletBinding()]

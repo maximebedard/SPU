@@ -8,14 +8,28 @@ function Export-SPUSolution
         Export all specified solutions to a specific path on the 
         filesystem. 
 
-        .EXAMPLE
-        Export-SPUSolution -Path .\solutions_23-07-2014
-    
-        .EXAMPLE
-        Get-SPSolution | ?{$_.Name -Like "Victrix.*"} | Export-SPUSolution -Path .\solutions_23-07-2014
+        .PARAMETER Path
+        Destination directory to export the specified solutions
+
+        .PARAMETER Identity
+        Solutions to export. If not specified, all the solutions in the 
+        solution store will be exported.
+
+        .PARAMETER GenerateManifest
+        Generate an xml manifest that can be used to import all the solutions automatically.
+        See Import-SPUSolution cmdlet.
 
         .EXAMPLE
-        Export-SPUSolution -Path .\solutions_23-07-2014 -Compress
+        Export all the solutions to the folder $PWD\solutions_23-07-2014
+        PS C:\> Export-SPUSolution -Path .\solutions_23-07-2014
+    
+        .EXAMPLE
+        Export all the solutions that starts with "com" to the folder $PWD\solutions_23-07-2014
+        PS C:\> Get-SPSolution | ?{$_.Name -Like "com.*"} | Export-SPUSolution -Path .\solutions_23-07-2014
+
+        .EXAMPLE
+        Export all the solutions to the folder $PWD\solutions_23-07-2014 and generate a manifest.xml in the same folder.
+        Export-SPUSolution -Path .\solutions_23-07-2014 -GenerateManifest
 
     #>
     [CmdletBinding()]
