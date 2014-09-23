@@ -30,8 +30,7 @@ function Import-SPUTermstore
     [CmdletBinding()]
     param(
         [Parameter(
-            Mandatory = $true,
-            ParameterSetName = "ByFile"
+            Mandatory = $true
         )]
         [string]$Path
     )

@@ -60,7 +60,10 @@ function Import-SPUSolution
     #>
     [CmdletBinding()]
     param(
-        [string]$Path = "$PWD\manifest.xml",
+        [Parameter(
+            Mandatory=$true
+        )]
+        [string]$Path,
 
         [scriptblock[]]$BeforeCallback = @(),
         [scriptblock[]]$AfterCallback = @(),
@@ -68,9 +71,7 @@ function Import-SPUSolution
         [scriptblock[]]$BeforeActionCallback = @(),
         [scriptblock[]]$AfterActionCallback = @(),
 
-        [hashtable]$Parameters = @{
-            env="dev"
-        },
+        [hashtable]$Parameters = @{},
         [switch]$Cleanup
     )
 
@@ -85,116 +86,99 @@ function Import-SPUSolution
     $BeforeActionCallback = $DefaultBeforeActionCallbacks + $BeforeActionCallback
     $AfterActionCallback  = $DefaultAfterActionCallbacks + $AfterActionCallback
 
+    $content = Get-Content $Path -Encoding UTF8 -ErrorAction Stop
 
-    if(Test-Path -Path $Path -Filter "*.xml" -PathType Leaf)
+    if ($PSVersionTable.PSVersion.Major -lt 3) { $content = $content -replace '"', '`"' }
+
+    $config = [xml]$ExecutionContext.InvokeCommand.ExpandString($content)
+
+    $BeforeCallback | %{ & $_ }
+
+    foreach($solutionElem in $config.SelectNodes("//Solution"))
     {
-        Write-Verbose "Reading manifest $Path"
+        $name       = $solutionElem.Name
+        $webApps    = ($solutionElem.SelectNodes("./WebApplications/WebApplication/@Url") | Select -ExpandProperty "#text")
+        $webAppsStr = $webApps -join ", "
 
-        # EXTRACT THIS
-        $content = Get-Content $Path -Encoding UTF8 -ErrorAction Stop
+        $state      = Get-SPUSolutionState -Identity $name -WebApplication $webApps -Cleanup:$Cleanup
+        
+        Write-Verbose "Processing solution $name"
+        Write-Host "$name" -Foreground Cyan
 
-        if ($PSVersionTable.PSVersion.Major -lt 3) { $content = $content -replace '"', '`"' }
-
-        $config = [xml]$ExecutionContext.InvokeCommand.ExpandString($content)
-
-        $BeforeCallback | %{ & $_ }
-
-        foreach($solutionElem in $config.SelectNodes("//Solution"))
+        while(@("Installed", "Uninstalled") -notcontains $state)
         {
-            $name       = $solutionElem.Name
-            $webApps    = ($solutionElem.SelectNodes("./WebApplications/WebApplication/@Url") | Select -ExpandProperty "#text")
-            $webAppsStr = $webApps -join ", "
-
-            $state      = Get-SPUSolutionState -Identity $name -WebApplication $webApps -Cleanup:$Cleanup
+            Write-Host " => $state" -Foreground DarkCyan
+            $BeforeActionCallback | %{ & $_ $name $state}
             
-            Write-Verbose "Processing solution $name"
-            Write-Host "$name" -Foreground Cyan
-
-            while(@("Installed", "Uninstalled") -notcontains $state)
+            switch($state)
             {
-                Write-Host " => $state" -Foreground DarkCyan
-                $BeforeActionCallback | %{ & $_ $name $state}
-                
-                switch($state)
+                "Add" 
                 {
-                    "Add" 
-                    {
-                        Write-Verbose "Adding $name to the solution store"
-                        Add-SPSolution -LiteralPath "$PWD\$name" | Out-Null
-                    }
+                    Write-Verbose "Adding $name to the solution store"
+                    Add-SPSolution -LiteralPath "$PWD\$name" | Out-Null
+                }
 
-                    "Deploy" 
-                    {
+                "Deploy" 
+                {
 
-                        # refactor
-                        if(($webApps -ne $null) -and (@($webApps).Count -gt 0))
-                        {
-                            Write-Verbose "Deploying $name to the the following web applications : $webAppsStr"
-                            $webApps | %{
-                                Install-SPSolution -Identity $name -WebApplication $_ -GACDeployment
-                                Wait-SPUSolutionJob -Identity $name
-                            }
-                        }
-                        else 
-                        {
-                            Write-Verbose "Deploying $name globally"     
-                            Install-SPSolution -Identity $name -GACDeployment 
+                    # refactor
+                    if(($webApps -ne $null) -and (@($webApps).Count -gt 0))
+                    {
+                        Write-Verbose "Deploying $name to the the following web applications : $webAppsStr"
+                        $webApps | %{
+                            Install-SPSolution -Identity $name -WebApplication $_ -GACDeployment
                             Wait-SPUSolutionJob -Identity $name
                         }
                     }
-
-                    "Update" 
+                    else 
                     {
-                        throw "Not implemented yet"
-                    }
-
-                    "Retract"
-                    {
-                        # refactor
-                        if(($webApps -ne $null) -and (@($webApps).Count -gt 0))
-                        {
-                            Write-Verbose "Retracting $name to the the following web applications : $webAppsStr"
-                            $webApps | %{
-                                Uninstall-SPSolution -Identity $name -WebApplication $_ -Confirm:$false 
-                                Wait-SPUSolutionJob -Identity $name
-                            }
-                        }
-                        else 
-                        {
-                            Write-Verbose "Retracting $name globally"
-                            Uninstall-SPSolution -Identity $name -Confirm:$false    
-                            Wait-SPUSolutionJob -Identity $name
-                        }
-                    }
-
-                    "Remove" 
-                    {
-                        Write-Verbose "Removing $name from the solution store"
-                        Remove-SPSolution -Identity $name -Confirm:$false
+                        Write-Verbose "Deploying $name globally"     
+                        Install-SPSolution -Identity $name -GACDeployment 
+                        Wait-SPUSolutionJob -Identity $name
                     }
                 }
-                
-                $AfterActionCallback | %{ & $_ $name $state}
 
-                $state = Get-SPUSolutionState -Identity $name -WebApplication $webApps -PreviousState $state -Cleanup:$Cleanup
+                "Update" 
+                {
+                    throw "Not implemented yet"
+                }
+
+                "Retract"
+                {
+                    # refactor
+                    if(($webApps -ne $null) -and (@($webApps).Count -gt 0))
+                    {
+                        Write-Verbose "Retracting $name to the the following web applications : $webAppsStr"
+                        $webApps | %{
+                            Uninstall-SPSolution -Identity $name -WebApplication $_ -Confirm:$false 
+                            Wait-SPUSolutionJob -Identity $name
+                        }
+                    }
+                    else 
+                    {
+                        Write-Verbose "Retracting $name globally"
+                        Uninstall-SPSolution -Identity $name -Confirm:$false    
+                        Wait-SPUSolutionJob -Identity $name
+                    }
+                }
+
+                "Remove" 
+                {
+                    Write-Verbose "Removing $name from the solution store"
+                    Remove-SPSolution -Identity $name -Confirm:$false
+                }
             }
+            
+            $AfterActionCallback | %{ & $_ $name $state}
 
-            Write-Host " => $state!" -Foreground Green
+            $state = Get-SPUSolutionState -Identity $name -WebApplication $webApps -PreviousState $state -Cleanup:$Cleanup
         }
 
-        $AfterCallback | %{ & $_ }
+        Write-Host " => $state!" -Foreground Green
+    }
 
-    }
-    elseif(Test-Path -Path $Path -PathType Container) 
-    {
-        Write-Verbose "Searching for manifest in the directory $Path"
-        
-        Import-SPUSolution -Path "$Path\manifest.xml" -Parameters $Parameters
-    }
-    else 
-    {
-        throw "Solution manifest not found. Please create a new manifest.xml file."        
-    }
+    $AfterCallback | %{ & $_ }
+
 
 }
 
