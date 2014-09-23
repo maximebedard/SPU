@@ -26,6 +26,7 @@ function New-SPUSolutionManifest
         $w.Formatting = 'Indented'
 
         $w.WriteStartDocument()
+        $w.WriteStartElement("SPU")
         $w.WriteStartElement("Solutions")
       
 
@@ -57,6 +58,7 @@ function New-SPUSolutionManifest
             $w.WriteEndElement()
         }
 
+        $w.WriteEndElement()
         $w.WriteEndElement()
 
         $w.WriteEndDocument()

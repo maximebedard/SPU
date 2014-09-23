@@ -23,8 +23,8 @@ filter Skip-Null { $_ | ?{ $_ } }
 Export-ModuleMember -function Get-SPUCentralAdministration
 
 # Taxonomy
-Export-ModuleMember -function Import-SPUTaxonomyGroup, 
-    Export-SPUTaxonomyGroup, 
+Export-ModuleMember -function Import-SPUTermstore, 
+    Export-SPUTermstore, 
     Get-SPUTermstore, 
     Get-SPUTaxonomySession
 

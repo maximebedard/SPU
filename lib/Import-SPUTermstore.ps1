@@ -1,4 +1,4 @@
-function Import-SPUTaxonomyGroup
+function Import-SPUTermstore
 {
     <#
     .SYNOPSIS
@@ -29,40 +29,43 @@ function Import-SPUTaxonomyGroup
     #>
     [CmdletBinding()]
     param(
-        [Parameter( 
-            Mandatory = $true,
-            ValueFromPipeline = $true
-        )]
-        [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore,
-
         [Parameter(
             Mandatory = $true,
             ParameterSetName = "ByFile"
         )]
-        [string]$Path,
-
-        [Parameter(
-            Mandatory = $true,
-            ParameterSetName = "ByXml"
-        )]
-        [xml]$Xml
+        [string]$Path
     )
 
-    switch($PsCmdlet.ParameterSetName)
-    {
-        "ByFile" {
-            [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop 
-        }
+    [xml]$config = Get-Content $Path -Encoding UTF8 -ErrorAction Stop 
 
-        "ByXml" {
-            [xml]$config = $Xml
+    function Import-TaxonomyTermStore
+    {
+        param(
+            [System.Xml.XmlElement]$termStoreElem
+        )
+    
+        $termstore = Get-SPUTermstore -Name $termStoreElem.Name -ErrorAction "Stop"
+
+        foreach($group in $termStoreElem.SelectNodes("./Groups/Group"))
+        {
+            try 
+            {
+                Import-TaxonomyGroup $group $termstore
+                $termStore.CommitAll()
+            }
+            catch 
+            {
+                $termStore.RollbackAll()
+                throw $_
+            }
         }
     }
 
     function Import-TaxonomyGroup
     { 
         param(
-            [System.Xml.XmlElement]$groupElem
+            [System.Xml.XmlElement]$groupElem,
+            [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore
         )
 
         $group = $TermStore.Groups | ?{ $_.Name -eq $groupElem.Name }
@@ -75,7 +78,7 @@ function Import-SPUTaxonomyGroup
 
         foreach($termSet in $groupElem.SelectNodes("./TermSets/TermSet"))
         { 
-            Import-TaxonomyTermSet $group $termSet
+            Import-TaxonomyTermSet $group $termSet $TermStore
         } 
     }
 
@@ -83,7 +86,8 @@ function Import-SPUTaxonomyGroup
     { 
         param(
             [Microsoft.SharePoint.Taxonomy.Group]$group,
-            [System.Xml.XmlElement]$termSetElem
+            [System.Xml.XmlElement]$termSetElem,
+            [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore
         )
 
         $guid         = [guid]($termSetElem.ID)
@@ -122,7 +126,7 @@ function Import-SPUTaxonomyGroup
         # Create all the terms in the current TermSet
         foreach($term in $terms)
         { 
-            Import-TaxonomyTerm $termSet $term
+            Import-TaxonomyTerm $termSet $term $TermStore
         }
     } 
 
@@ -130,7 +134,8 @@ function Import-SPUTaxonomyGroup
     { 
         param(
             $container,
-            [System.Xml.XmlElement]$termElem
+            [System.Xml.XmlElement]$termElem,
+            [Microsoft.SharePoint.Taxonomy.TermStore]$TermStore
         )
 
         $guid   = [guid]($termElem.ID)
@@ -161,23 +166,13 @@ function Import-SPUTaxonomyGroup
 
         foreach($cTerm in $terms)
         {
-            Import-TaxonomyTerm $term $cTerm 
+            Import-TaxonomyTerm $term $cTerm $TermStore
         }
     } 
 
-    foreach($group in $config.SelectNodes("/Groups/Group"))
+    foreach($termstore in $config.SelectNodes("//TermStore"))
     { 
-        Import-TaxonomyGroup $group
+        Import-TaxonomyTermStore $termstore
     }         
-
-    try 
-    {
-        $TermStore.CommitAll()
-    }
-    catch 
-    {
-        $TermStore.RollbackAll()
-        throw $_
-    }
-
+    
 }

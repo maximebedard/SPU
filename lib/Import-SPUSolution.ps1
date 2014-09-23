@@ -99,7 +99,7 @@ function Import-SPUSolution
 
         $BeforeCallback | %{ & $_ }
 
-        foreach($solutionElem in $config.SelectNodes("/Solutions/Solution"))
+        foreach($solutionElem in $config.SelectNodes("//Solution"))
         {
             $name       = $solutionElem.Name
             $webApps    = ($solutionElem.SelectNodes("./WebApplications/WebApplication/@Url") | Select -ExpandProperty "#text")

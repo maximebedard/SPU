@@ -1,4 +1,4 @@
-function Export-SPUTaxonomyGroup
+function Export-SPUTermstore
 {
     <#
     .SYNOPSIS
@@ -181,9 +181,16 @@ function Export-SPUTaxonomyGroup
     }
 
     $w.WriteStartDocument()
+    $w.WriteStartElement("SPU")
+    $w.WriteStartElement("TermStores")
+    $w.WriteStartElement("TermStore")
+    $w.WriteAttributeString("Name", $TermStore.Name)
     
     Export-TaxonomyGroups -Groups $allGroups
-
+    
+    $w.WriteEndElement()
+    $w.WriteEndElement()
+    $w.WriteEndElement()
     $w.WriteEndDocument()
 
     # Complete the file creation
