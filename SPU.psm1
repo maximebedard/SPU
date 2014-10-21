@@ -40,3 +40,7 @@ Export-ModuleMember -function Export-SPUSolution,
 Export-ModuleMember -function Get-AssemblyFullName, 
     Write-Spinner, 
     Compare-Directory
+
+# Sites
+
+Export-ModuleMember -function Export-SPUSite
