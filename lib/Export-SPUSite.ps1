@@ -50,7 +50,7 @@ function Export-SPUSite
             $w.WriteAttributeString("Url", $site.Url)
             $w.WriteAttributeString("Title", $site.Title)
             $w.WriteAttributeString("Description", $site.Description)
-            $w.WriteAttributeString("Template", "$($rootWeb.WebTemplate)#$($rootWeb.WebTemplateId)")
+            $w.WriteAttributeString("Template", "$($rootWeb.WebTemplate)#$($rootWeb.Configuration)")
 
             $w.WriteEndElement()
                     

@@ -33,9 +33,10 @@ function Export-SPUTermstore
         [string[]]$GroupName, 
 
         [Parameter(
-            ValueFromPipeline = $true
+            ValueFromPipeline = $true,
+            Mandatory=$true
         )]
-        [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore = (Get-SPUTermstore)
+        [Microsoft.SharePoint.Taxonomy.TermStore]$Termstore
     )
     
     $w             = New-Object System.Xml.XmlTextWriter($LiteralPath, $null)
