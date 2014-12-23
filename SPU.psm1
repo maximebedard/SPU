@@ -36,6 +36,9 @@ Export-ModuleMember -function Export-SPUSolution,
     Test-SPUSolutionAdded,
     Compare-SPUSolutionFile
 
+# Managed Properties
+Export-ModuleMember -function Import-SPUManagedProperties
+
 # General Utilities
 Export-ModuleMember -function Get-AssemblyFullName, 
     Write-Spinner, 
