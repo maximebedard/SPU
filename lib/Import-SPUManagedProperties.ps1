@@ -68,11 +68,11 @@ function Import-SPUManagedProperties
 
         $cp = Get-SPEnterpriseSearchMetadataCrawledProperty -SearchApplication $SearchApplication -Name $crawledPropertyName -ErrorAction SilentlyContinue
 
-        if($cp) {
-            
+        # TODO Delete existing crawled properties
+
+        if(!$cp) {
             New-SPEnterpriseSearchMetadataCrawledProperty -SearchApplication $SearchApplication -Category $crawledPropertyCategory -VariantType $crawledPropertyVariantType -Name $crawledPropertyName -IsNameEnum $false -PropSet $crawledPropertySetId | Out-Null
         }
-
         
     }
 
@@ -84,8 +84,8 @@ function Import-SPUManagedProperties
         $managedPropMapList = $managedPropertyElem.Map
 
         # Get existing
-        $mp = Get-SPEnterpriseSearchMetadataManagedProperty -SearchApplication $SearchApplication -Identity $managedPropertyElem.Name 
-        $mappings = Get-SPEnterpriseSearchMetadataMapping -SearchApplication $SearchApplication -ManagedProperty $mp 
+        $mp = Get-SPEnterpriseSearchMetadataManagedProperty -SearchApplication $SearchApplication -Identity $managedPropertyElem.Name -ErrorAction SilentlyContinue
+        $mappings = Get-SPEnterpriseSearchMetadataMapping -SearchApplication $SearchApplication -ManagedProperty $mp -ErrorAction SilentlyContinue 
 
         # Remove mappings
         $mappings | Remove-SPEnterpriseSearchMetadataMapping -Confirm:$Confirm
@@ -102,6 +102,9 @@ function Import-SPUManagedProperties
         {
             $mappingCrawledPropertyName = $mapping.CrawledProperty
             $crawledProperty = Get-SPEnterpriseSearchMetadataCrawledProperty -SearchApplication $SearchApplication -Name $mappingCrawledPropertyName
+
+            # TODO Add categories search
+
             New-SPEnterpriseSearchMetadataMapping -SearchApplication $SearchApplication -CrawledProperty $crawledProperty -ManagedProperty $mp | Out-Null
         }
     }
